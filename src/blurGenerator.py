@@ -156,6 +156,13 @@ class BlurGenerator:
             self.img_stack = np.vstack((self.img_stack,blure_image[np.newaxis,:,:]))
             self.acc = np.vstack((self.acc,[a_x,a_y]))
         #blue images
+        plt.figure(figsize=(10, 5))
+        plt.imshow(image_float, cmap='gray')
+        plt.title('Original Image')
+        plt.axis('off')
+
+        self.GetRestoredImage(blure_image/255,a_x,a_y)
+
         return self.img_stack , self.acc
         #return ax,ay,original_img , blur_img OR dictionary blur_img -> (ax,ay,original_img)
 
