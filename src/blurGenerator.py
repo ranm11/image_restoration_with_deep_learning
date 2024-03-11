@@ -23,6 +23,7 @@ class BlurGenerator:
         self.IMAGE_LEN = 218
         self.IMAGE_WiDTH = 178
         self.num_time_samples = 120
+        self.T = 15
 
 
     def transfer_function(self, u,v, a_x,a_y, t):
@@ -113,12 +114,12 @@ class BlurGenerator:
         a_y = random.random()*2
         # Parameters
         a = 0.9  # Acceleration
-        T = 15.0  # Total exposure time
+        #T = 15.0  # Total exposure time
         num_time_samples = 120  # Number of time samples for integration
         cutoff_frequency = 0.5  # Cutoff frequency for low-pass filter
 
         # Generate array of time points during exposure
-        t = np.linspace(0, T, num_time_samples)
+        t = np.linspace(0, self.T, num_time_samples)
 
         blurred_image, Distortion_filter = self.apply_motion_blur(image, a_x,a_y, t, cutoff_frequency, num_time_samples)
         
@@ -176,8 +177,8 @@ class BlurGenerator:
 
         # Initialize transfer function
         H_sum = np.zeros_like(u_mesh, dtype=np.complex64)
-        T = 15
-        t = np.linspace(0, T, self.num_time_samples)
+        #T = 15
+        t = np.linspace(0, self.T, self.num_time_samples)
         # Integrate over time
         for i in range(self.num_time_samples):
             # Calculate transfer function for current time sample
