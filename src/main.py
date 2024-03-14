@@ -1,111 +1,24 @@
 from blurGenerator import BlurGenerator
 import matplotlib.pyplot as plt
 import keras.utils as image
-from tensorflow.keras.models import Sequential
-from tensorflow.keras import layers
-from tensorflow.keras.layers import Dropout ,MaxPooling2D,Conv2D,Flatten,Dense,concatenate
 from keras.models import load_model
 import numpy as np
-from tensorflow.keras import Input , Model
+from DeepLearningModels import deepLearningModels 
 from enum import Enum
 import cv2
 
-NOF_train = 150
+
 class Mode(Enum):
     CONVNET = 1
     CONCATENATED_FULLY_CONNECTED_CONVNET = 2
     SOBEL = 3
     CONVNET_COVARIANCE = 4
 
-def build_convnet_covariance_concatenated_model(blurGenerator):
-    FC_inputs = Input(shape=(4),name="SVD_inputs")
-    layer1 = Dense(units = 80,activation = 'relu')(FC_inputs) 
-    layer1 = Dropout(0.1)(layer1)
-    layer1 = Dense(units=50, activation='relu')(layer1)
-    layer1 = Dropout(0.1)(layer1)
-    layer1 = Dense(units  = 18, activation='sigmoid')(layer1)
-    layer1 = Dropout(0.1)(layer1)
-    output_Fc= Dense(2,activation='linear')(layer1)
-    convnet_input = Input(shape=(blurGenInstance.IMAGE_LEN, blurGenInstance.IMAGE_WiDTH, 1),name="Convnet_inputs")
-    layer2 = Conv2D(32, (3, 3), activation='relu')(convnet_input)
-    layer2 = MaxPooling2D((2, 2))(layer2)
-    layer2 = Conv2D(64, (3, 3), activation='relu')(layer2)
-    layer2 = MaxPooling2D((2, 2))(layer2)
-    layer2 = Conv2D(128, (3, 3), activation='relu')(layer2)
-    layer2 = MaxPooling2D((2, 2))(layer2)
-    layer2 = Conv2D(128, (3, 3), activation='relu')(layer2)
-    layer2 = MaxPooling2D((2, 2))(layer2)
-    layer2 = Flatten()(layer2)
-    layer2 = Dense(512, activation='sigmoid')(layer2)
-    layer2 = Dropout(0.3)(layer2)
-    output_convnet =  Dense(128, activation='sigmoid')(layer2)
-    #concatenate layers
-    concatenated = concatenate([output_Fc, output_convnet]) 
-    output = Dense(2, activation='linear')(concatenated)
-    model = Model(inputs=[FC_inputs,convnet_input],outputs=output)
-    model.compile(optimizer='adam',  loss='mean_squared_error', metrics=['accuracy'])
-    return model
+NOF_train = 250
+NOF_test = 50
+skip_training = 0
+mode = Mode.SOBEL
 
-def build_covariance_analyzer_model(blurGenInstance):
-    FC_inputs = Input(shape=(4),name="SVD_inputs")
-    layer1 = Dense(units = 80,activation = 'relu')(FC_inputs) 
-    layer1 = Dropout(0.1)(layer1)
-    layer1 = Dense(units=50, activation='relu')(layer1)
-    layer1 = Dropout(0.1)(layer1)
-    layer1 = Dense(units  = 18, activation='sigmoid')(layer1)
-    layer1 = Dropout(0.1)(layer1)
-    output_Fc= Dense(2,activation='linear')(layer1)
-    model = Model(inputs=FC_inputs,outputs=output_Fc)
-    model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
-    return model
-
-def build_model(blurGenInstance):
-    model = Sequential()
-    model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(blurGenInstance.IMAGE_LEN, blurGenInstance.IMAGE_WiDTH, 1)))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Conv2D(64, (3, 3), activation='relu'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Conv2D(128, (3, 3), activation='relu'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Conv2D(128, (3, 3), activation='relu'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Flatten())
-    model.add(Dense(512, activation='linear'))
-    model.add(Dropout(0.5))
-    model.add(Dense(2, activation='linear'))
-    model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
-    return model
-
-def buildConcatenatedNetwork(blurGenInstance):
-        #build fullyConnected for Singular values
-        FC_inputs = Input(shape=(blurGenInstance.IMAGE_WiDTH),name="SVD_inputs")
-        layer1 = Dense(units = 800,activation = 'relu')(FC_inputs) 
-        layer1 = Dropout(0.1)(layer1)
-        layer1 = Dense(units=500, activation='relu')(layer1)
-        layer1 = Dropout(0.1)(layer1)
-        layer1 = Dense(units  = 128, activation='sigmoid')(layer1)
-        layer1 = Dropout(0.1)(layer1)
-        output_Fc= Dense(128,activation='sigmoid')(layer1)
-        #build convnet for blur images
-        convnet_input = Input(shape=(blurGenInstance.IMAGE_LEN, blurGenInstance.IMAGE_WiDTH, 1),name="Convnet_inputs")
-        layer2 = Conv2D(32, (3, 3), activation='relu')(convnet_input)
-        layer2 = MaxPooling2D((2, 2))(layer2)
-        layer2 = Conv2D(64, (3, 3), activation='relu')(layer2)
-        layer2 = MaxPooling2D((2, 2))(layer2)
-        layer2 = Conv2D(128, (3, 3), activation='relu')(layer2)
-        layer2 = MaxPooling2D((2, 2))(layer2)
-        layer2 = Conv2D(128, (3, 3), activation='relu')(layer2)
-        layer2 = MaxPooling2D((2, 2))(layer2)
-        layer2 = Flatten()(layer2)
-        layer2 = Dense(512, activation='sigmoid')(layer2)
-        layer2 = Dropout(0.3)(layer2)
-        output_convnet =  Dense(128, activation='sigmoid')(layer2)
-        #concatenate layers
-        concatenated = concatenate([output_Fc, output_convnet]) 
-        output = Dense(2, activation='linear')(concatenated)
-        model = Model(inputs=[FC_inputs,convnet_input],outputs=output)
-        model.compile(optimizer='adam',  loss='mean_squared_error', metrics=['mae'])
-        return model
 
 def getNormalizeDataSet(ims_stack,acc):
         return ims_stack[:NOF_train].astype("float32")/255, acc[:NOF_train], ims_stack[NOF_train:].astype("float32")/255 ,acc[NOF_train:]
@@ -131,7 +44,8 @@ def  getCovarianceMatrixDataset(img_stack,acc):
 
     return covariance_stack[:NOF_train].astype("float32")/255 , acc[:NOF_train].astype("float32") ,covariance_stack[NOF_train:].astype("float32")/255, acc[NOF_train:].astype("float32")         
 
-blurGenInstance = BlurGenerator('celebA_\\img_align_celeba\\img_align_celeba')
+blurGenInstance = BlurGenerator('celebA_\\img_align_celeba\\img_align_celeba',NOF_train,NOF_test)
+dl_Instance = deepLearningModels()
 img_stack,acc = blurGenInstance.CreateDataSet()
 #Generate SVD Dataset
 S_stack_train , S_acc_train,S_stack_test,S_acc_test = generateSVDdataset(img_stack,acc,blurGenInstance)
@@ -140,8 +54,7 @@ train_data, train_label ,test_data, test_label = getNormalizeDataSet(img_stack,a
 
 
 
-skip_training = 0
-mode = Mode.CONVNET_COVARIANCE
+
 if(mode==Mode.CONCATENATED_FULLY_CONNECTED_CONVNET):
     if skip_training:
         concatenated_model = load_model('Restore_blure_images_concatenated.keras')
@@ -150,7 +63,7 @@ if(mode==Mode.CONCATENATED_FULLY_CONNECTED_CONVNET):
 
     else:
         #fit SVD fully connected model
-        concatenated_model = buildConcatenatedNetwork(blurGenInstance)
+        concatenated_model = dl_Instance.buildConcatenatedNetwork(blurGenInstance)
         concatenated_history = concatenated_model.fit([S_stack_train,train_data], S_acc_train, epochs=85, validation_split=0.2, verbose=1)
         concatenated_result =  concatenated_model.predict([S_stack_test,test_data])
         concatenated_model.save('Restore_blure_images_concatenated.keras')
@@ -163,10 +76,16 @@ if(mode==Mode.CONVNET):
 
     else:
         #fit blur image model
-        conv_model = build_model(blurGenInstance)
+        conv_model = dl_Instance.build_model(blurGenInstance)
         history = conv_model.fit(train_data, train_label, epochs=85, validation_split=0.2, verbose=1)
         result =  conv_model.predict(test_data)
         conv_model.save('Restore_blure_images.keras')
+        np.mean(result-test_label)/2 # 4% deviation 
+        training_accuracy = history.history['mae']
+        plt.figure(figsize=(10, 5))
+        plt.plot(training_accuracy )
+        validation_accuracy = history.history['val_mae']
+        plt.plot(validation_accuracy )
 if(mode==Mode.SOBEL):
         train_cov , train_label ,test_cov, test_label = getCovarianceMatrixDataset(img_stack,acc)        
         # Compute eigenvalues and eigenvectors of the covariance matrix
@@ -184,7 +103,7 @@ if(mode==Mode.SOBEL):
             result =  covariance_model.predict(test_cov)
             np.mean(result-test_label)/2 # 3% precision 
         else:
-            model = build_covariance_analyzer_model(blurGenInstance)
+            model = dl_Instance.build_covariance_analyzer_model(blurGenInstance)
             history = model.fit(train_cov, train_label, epochs=85, validation_split=0.2, verbose=1)
             result =  model.predict(test_cov)
             model.save('Restore_blure_images_covariance.keras')
@@ -216,7 +135,7 @@ if(mode==Mode.CONVNET_COVARIANCE):
 
         else:
             #fit SVD fully connected model
-            convnet_covariance_model = build_convnet_covariance_concatenated_model(blurGenInstance)
+            convnet_covariance_model = dl_Instance.build_convnet_covariance_concatenated_model(blurGenInstance)
             history = convnet_covariance_model.fit([train_cov,train_data], S_acc_train, epochs=85, validation_split=0.2, verbose=1)
             result =  convnet_covariance_model.predict([test_cov,test_data])
             convnet_covariance_model.save('Restore_blure_images_convnet_covariance_concatenated.keras')

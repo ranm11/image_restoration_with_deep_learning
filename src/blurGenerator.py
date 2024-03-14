@@ -14,10 +14,10 @@ acceleration in x, y axis foreach image
 """
 
 class BlurGenerator:
-    def __init__(self,path_to_images) -> None:
+    def __init__(self,path_to_images,NOF_train,NOF_Test) -> None:
         self.path_to_images=path_to_images
         self.img_to_ax_ay_dict = {}
-        self.NOF_IMAGES = 200
+        self.NOF_IMAGES = NOF_train + NOF_train
         self.img_stack = 0
         self.acc = 0
         self.IMAGE_LEN = 218
