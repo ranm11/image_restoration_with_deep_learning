@@ -17,7 +17,7 @@ class deepLearningModels:
         layer1 = Dense(units  = 18, activation='sigmoid')(layer1)
         layer1 = Dropout(0.1)(layer1)
         output_Fc= Dense(2,activation='linear')(layer1)
-        convnet_input = Input(shape=(blurGenInstance.IMAGE_LEN, blurGenInstance.IMAGE_WiDTH, 1),name="Convnet_inputs")
+        convnet_input = Input(shape=(blurGenerator.IMAGE_LEN, blurGenerator.IMAGE_WiDTH, 1),name="Convnet_inputs")
         layer2 = Conv2D(32, (3, 3), activation='relu')(convnet_input)
         layer2 = MaxPooling2D((2, 2))(layer2)
         layer2 = Conv2D(64, (3, 3), activation='relu')(layer2)
