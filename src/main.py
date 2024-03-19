@@ -6,7 +6,7 @@ import numpy as np
 from DeepLearningModels import deepLearningModels 
 from enum import Enum
 import cv2
-
+from keras.utils import plot_model
 
 class Mode(Enum):
     CONVNET = 1
@@ -14,7 +14,7 @@ class Mode(Enum):
     SOBEL = 3
     CONVNET_COVARIANCE = 4
 
-NOF_train = 250
+NOF_train = 150
 NOF_test = 50
 skip_training = 0
 mode = Mode.SOBEL
@@ -59,6 +59,8 @@ if(mode==Mode.CONCATENATED_FULLY_CONNECTED_CONVNET):
     if skip_training:
         concatenated_model = load_model('Restore_blure_images_concatenated.keras')
         result =  concatenated_model.predict([S_stack_test,test_data])
+        plot_model(concatenated_model, to_file='SVD_CONVNET_concatenated_model_plot.png', show_shapes=True, show_layer_names=True)
+        dl_Instance.plotLoss(result)
         np.mean(result-test_label) # 8% deviation 
 
     else:
@@ -72,14 +74,20 @@ if(mode==Mode.CONVNET):
     if skip_training:
         conv_model = load_model('Restore_blure_images.keras')
         result =  conv_model.predict(test_data)
+        dl_Instance.plotLoss(conv_model.history)
+        plot_model(conv_model, to_file='convNet_model_plot.png', show_shapes=True, show_layer_names=True)
         np.mean(result-test_label) # 12% deviation 
 
     else:
         #fit blur image model
         conv_model = dl_Instance.build_model(blurGenInstance)
         history = conv_model.fit(train_data, train_label, epochs=85, validation_split=0.2, verbose=1)
+        dl_Instance.plotLoss(history)
         result =  conv_model.predict(test_data)
         conv_model.save('Restore_blure_images.keras')
+        #
+        # conv_model.save('ConvNet_300_images.keras')
+        
         np.mean(result-test_label)/2 # 4% deviation 
         training_accuracy = history.history['mae']
         plt.figure(figsize=(10, 5))
@@ -101,11 +109,13 @@ if(mode==Mode.SOBEL):
         if skip_training:
             covariance_model = load_model('Restore_blure_images_covariance.keras')
             result =  covariance_model.predict(test_cov)
+            plot_model(covariance_model, to_file='Sobel_model_plot.png', show_shapes=True, show_layer_names=True)
             np.mean(result-test_label)/2 # 3% precision 
         else:
             model = dl_Instance.build_covariance_analyzer_model(blurGenInstance)
             history = model.fit(train_cov, train_label, epochs=85, validation_split=0.2, verbose=1)
             result =  model.predict(test_cov)
+            dl_Instance.plotLoss(history)
             model.save('Restore_blure_images_covariance.keras')
 
         np.mean(result-test_label)/2 # 3% deviation 
@@ -130,15 +140,17 @@ if(mode==Mode.CONVNET_COVARIANCE):
     
         if skip_training:
             convnet_covariance_model = load_model('Restore_blure_images_convnet_covariance_concatenated.keras')
+            plot_model(convnet_covariance_model, to_file='convNet_Covariance_input_model_plot.png', show_shapes=True, show_layer_names=True)
             result =  convnet_covariance_model.predict([test_cov,test_data])
             np.mean(result-test_label) # 8% deviation 
 
         else:
-            #fit SVD fully connected model
+            
             convnet_covariance_model = dl_Instance.build_convnet_covariance_concatenated_model(blurGenInstance)
             history = convnet_covariance_model.fit([train_cov,train_data], S_acc_train, epochs=85, validation_split=0.2, verbose=1)
             result =  convnet_covariance_model.predict([test_cov,test_data])
             convnet_covariance_model.save('Restore_blure_images_convnet_covariance_concatenated.keras')
+            dl_Instance.plotLoss(history)
         np.mean(result-test_label)/2 # 4% deviation 
         training_accuracy = history.history['mae']
         plt.figure(figsize=(10, 5))

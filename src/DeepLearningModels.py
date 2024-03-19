@@ -2,11 +2,28 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras import layers
 from tensorflow.keras.layers import Dropout ,MaxPooling2D,Conv2D,Flatten,Dense,concatenate
 from tensorflow.keras import Input , Model
-
+import matplotlib.pyplot as plt
 
 class deepLearningModels:
     def __init__(self) -> None:
         self.zevel=0
+
+    def plotLoss(self,history):
+        plt.figure()
+        plt.subplot(211)
+        loss = history.history['loss']
+        epochs = range(1, len(loss) + 1)
+        plt.plot(epochs, loss, 'bo', label='Training loss')
+        plt.title('Training loss')
+        plt.subplot(212)
+        val_loss = history.history['val_loss']
+        epochs = range(1, len(loss) + 1)
+        plt.plot(epochs, val_loss, 'bo', label='Training loss')
+        plt.title('validation loss')
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.legend()
+        plt.show()
 
     def build_convnet_covariance_concatenated_model(self,blurGenerator):
         FC_inputs = Input(shape=(4),name="SVD_inputs")
@@ -97,6 +114,19 @@ class deepLearningModels:
             model = Model(inputs=[FC_inputs,convnet_input],outputs=output)
             model.compile(optimizer='adam',  loss='mean_squared_error', metrics=['mae'])
             return model
+
+    # def plotLoss(self,history):
+    #     plt.figure()
+    #     #plt.subplot(111)
+    #     loss = history.history['loss']
+    #     epochs = range(1, len(loss) + 1)
+    #     plt.plot(epochs, loss, 'bo', label='Training loss')
+    #     plt.title('Training and validation loss')
+    #     plt.xlabel('Epochs')
+    #     plt.ylabel('Loss')
+    #     plt.legend()
+    #     plt.show()
+
 
 
 
