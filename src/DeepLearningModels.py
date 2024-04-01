@@ -2,6 +2,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras import layers
 from tensorflow.keras.layers import Dropout ,MaxPooling2D,Conv2D,Flatten,Dense,concatenate
 from tensorflow.keras import Input , Model
+from tensorflow.keras.regularizers import l2
 import matplotlib.pyplot as plt
 
 class deepLearningModels:
@@ -67,22 +68,41 @@ class deepLearningModels:
         model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
         return model
 
-    def build_model(self,blurGenInstance):
+    def build_convnet_model(self,blurGenInstance, weight_decay = 1e-4):
         model = Sequential()
         model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(blurGenInstance.IMAGE_LEN, blurGenInstance.IMAGE_WiDTH, 1)))
         model.add(MaxPooling2D((2, 2)))
         model.add(Conv2D(64, (3, 3), activation='relu'))
         model.add(MaxPooling2D((2, 2)))
         model.add(Conv2D(128, (3, 3), activation='relu'))
+        #model.add(Dropout(0.2))
         model.add(MaxPooling2D((2, 2)))
-        model.add(Conv2D(128, (3, 3), activation='relu'))
+        model.add(Conv2D(128, (2, 2),kernel_regularizer=l2(weight_decay), activation='relu'))
         model.add(MaxPooling2D((2, 2)))
         model.add(Flatten())
-        model.add(Dense(512, activation='linear'))
+        model.add(Dense(512, activation='relu'))
         model.add(Dropout(0.5))
         model.add(Dense(2, activation='linear'))
         model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
         return model
+
+    def build_convnet_over_sobel_model(self,blurGenInstance, weight_decay = 1e-4):
+            model = Sequential()
+            model.add(Conv2D(32, (8, 8),kernel_regularizer=l2(weight_decay), activation='relu', input_shape=(blurGenInstance.IMAGE_LEN, blurGenInstance.IMAGE_WiDTH, 1)))
+            model.add(MaxPooling2D((2, 2)))
+            model.add(Conv2D(64, (5, 5),kernel_regularizer=l2(weight_decay), activation='relu'))
+            model.add(MaxPooling2D((2, 2)))
+            model.add(Conv2D(128, (3, 3),kernel_regularizer=l2(weight_decay), activation='relu'))
+            #model.add(Dropout(0.2))
+            model.add(MaxPooling2D((2, 2)))
+            model.add(Conv2D(128, (3, 3),kernel_regularizer=l2(weight_decay), activation='relu'))
+            model.add(MaxPooling2D((2, 2)))
+            model.add(Flatten())
+            model.add(Dense(512, activation='relu'))
+            model.add(Dropout(0.5))
+            model.add(Dense(1, activation='linear'))
+            model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
+            return model
 
     def buildConcatenatedNetwork(self,blurGenInstance):
             #build fullyConnected for Singular values

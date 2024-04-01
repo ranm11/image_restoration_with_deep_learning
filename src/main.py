@@ -13,11 +13,12 @@ class Mode(Enum):
     CONCATENATED_FULLY_CONNECTED_CONVNET = 2
     SOBEL = 3
     CONVNET_COVARIANCE = 4
+    CONVNET_OVER_SOBEL = 5
 
 NOF_train = 150
 NOF_test = 50
 skip_training = 0
-mode = Mode.SOBEL
+mode = Mode.CONVNET_OVER_SOBEL
 
 
 def getNormalizeDataSet(ims_stack,acc):
@@ -30,12 +31,58 @@ def generateSVDdataset(img_stack,acc,blurInstance):
         S_stack=np.vstack((S_stack,S))
      return S_stack[:NOF_train].astype("float32")/(255*255), acc[:NOF_train], S_stack[NOF_train:].astype("float32")/(255*255) ,acc[NOF_train:]
 
+def  getSobelDataset(img_stack,acc):
+    sobel_img_stack_x = np.empty((0,218,178))
+    sobel_img_stack_y = np.empty((0,218,178))
+    for img in img_stack:
+        sobelx = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)
+        sobely = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3)
+        sobelx = cv2.Sobel(sobelx, cv2.CV_64F, 1, 0, ksize=3)
+        sobely = cv2.Sobel(sobely, cv2.CV_64F, 0, 1, ksize=3)
+        # Compute the covariance matrix of gradients
+        show_sobel_img = 0
+        if show_sobel_img:
+            plt.figure(figsize=(10, 5))
+            plt.subplot(131)
+            plt.imshow(sobelx, cmap='gray')
+            plt.title('sobel2_x')
+            plt.subplot(132)
+            plt.imshow(sobely, cmap='gray')
+            plt.title('sobel3_y')
+            plt.subplot(133)
+            plt.imshow(img, cmap='gray')
+            plt.title('blurd image')
+            plt.axis('off')
+
+        #grad_matrix = np.column_stack((grad_x_flatten, grad_y_flatten))
+        #cov_matrix = np.cov(grad_matrix.T)
+        sobel_img_stack_x = np.vstack((sobel_img_stack_x,sobelx[np.newaxis,:,:]))
+        sobel_img_stack_y = np.vstack((sobel_img_stack_y,sobely[np.newaxis,:,:]))
+
+    return sobel_img_stack_x[:NOF_train].astype("float32")/255 ,sobel_img_stack_y[:NOF_train].astype("float32")/255, acc[:NOF_train].astype("float32") ,sobel_img_stack_x[NOF_train:].astype("float32")/255,sobel_img_stack_y[NOF_train:].astype("float32")/255, acc[NOF_train:].astype("float32")         
+
 def  getCovarianceMatrixDataset(img_stack,acc):
     covariance_stack = np.empty((0,4))
     for img in img_stack:
         sobelx = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)
         sobely = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3)
+        sobelx = cv2.Sobel(sobelx, cv2.CV_64F, 1, 0, ksize=3)
+        sobely = cv2.Sobel(sobely, cv2.CV_64F, 0, 1, ksize=3)
         # Compute the covariance matrix of gradients
+        show_sobel_img = 0
+        if show_sobel_img:
+            plt.figure(figsize=(10, 5))
+            plt.subplot(131)
+            plt.imshow(sobelx, cmap='gray')
+            plt.title('sobel_x')
+            plt.subplot(132)
+            plt.imshow(sobely, cmap='gray')
+            plt.title('sobel_y')
+            plt.subplot(133)
+            plt.imshow(img, cmap='gray')
+            plt.title('blurd image')
+            plt.axis('off')
+
         grad_x_flatten = sobelx.flatten()
         grad_y_flatten = sobely.flatten()
         grad_matrix = np.column_stack((grad_x_flatten, grad_y_flatten))
@@ -53,7 +100,31 @@ S_stack_train , S_acc_train,S_stack_test,S_acc_test = generateSVDdataset(img_sta
 train_data, train_label ,test_data, test_label = getNormalizeDataSet(img_stack,acc)
 
 
-
+if(mode == Mode.CONVNET_OVER_SOBEL):
+    train_sobel_x ,train_sobel_y, train_label ,test_sobel_x,test_sobel_y, test_label = getSobelDataset(img_stack,acc)             
+    if skip_training:
+        sobel_convnet_model_X = load_model('sobel2_x_model.keras')
+        sobel_convnet_model_Y = load_model('sobel2_y_model.keras')
+        result_x =  sobel_convnet_model_X.predict(test_sobel_x)
+        result_y =  sobel_convnet_model_Y.predict(test_sobel_y)
+        result = np.concatenate((result_x,result_y),axis=1)
+        np.mean(np.abs(result-test_label))
+        dl_Instance.plotLoss(sobel_convnet_model_X.history)
+        dl_Instance.plotLoss(sobel_convnet_model_Y.history)
+    else:    
+        sobel_convnet_model_X = dl_Instance.build_convnet_over_sobel_model(blurGenInstance)
+        sobel_convnet_model_Y = dl_Instance.build_convnet_over_sobel_model(blurGenInstance)
+        history_x = sobel_convnet_model_X.fit(train_sobel_x, train_label[:,0].reshape(NOF_train,1), epochs=85, validation_split=0.2, verbose=1)
+        history_y = sobel_convnet_model_Y.fit(train_sobel_y, train_label[:,1].reshape(NOF_train,1), epochs=85, validation_split=0.2, verbose=1)
+        result_x =  sobel_convnet_model_X.predict(test_sobel_x)
+        result_y =  sobel_convnet_model_Y.predict(test_sobel_y)
+        result = np.concatenate((result_x,result_y),axis=1)
+        np.mean(np.abs(result-test_label))
+        dl_Instance.plotLoss(history_x)
+        dl_Instance.plotLoss(history_y)
+        sobel_convnet_model_X.save('sobel2_x_model.keras')
+        sobel_convnet_model_Y.save('sobel2_y_model.keras')
+        plot_model(sobel_convnet_model_X, to_file='Sobel2_model_plot.png', show_shapes=True, show_layer_names=True)
 
 if(mode==Mode.CONCATENATED_FULLY_CONNECTED_CONVNET):
     if skip_training:
@@ -80,7 +151,7 @@ if(mode==Mode.CONVNET):
 
     else:
         #fit blur image model
-        conv_model = dl_Instance.build_model(blurGenInstance)
+        conv_model = dl_Instance.build_convnet_model(blurGenInstance)
         history = conv_model.fit(train_data, train_label, epochs=85, validation_split=0.2, verbose=1)
         dl_Instance.plotLoss(history)
         result =  conv_model.predict(test_data)
@@ -88,7 +159,7 @@ if(mode==Mode.CONVNET):
         #
         # conv_model.save('ConvNet_300_images.keras')
         
-        np.mean(result-test_label)/2 # 4% deviation 
+        np.mean(np.abs(result-test_label))
         training_accuracy = history.history['mae']
         plt.figure(figsize=(10, 5))
         plt.plot(training_accuracy )
@@ -117,7 +188,7 @@ if(mode==Mode.SOBEL):
             result =  model.predict(test_cov)
             dl_Instance.plotLoss(history)
             model.save('Restore_blure_images_covariance.keras')
-
+            model.save('Restore_blure_images_covariance_sobel_2.keras')
         np.mean(result-test_label)/2 # 3% deviation 
         training_accuracy = history.history['accuracy']
         plt.figure(figsize=(10, 5))
@@ -151,7 +222,7 @@ if(mode==Mode.CONVNET_COVARIANCE):
             result =  convnet_covariance_model.predict([test_cov,test_data])
             convnet_covariance_model.save('Restore_blure_images_convnet_covariance_concatenated.keras')
             dl_Instance.plotLoss(history)
-        np.mean(result-test_label)/2 # 4% deviation 
+        np.mean(np.abs(result-test_label)) 
         training_accuracy = history.history['mae']
         plt.figure(figsize=(10, 5))
         plt.plot(training_accuracy )
