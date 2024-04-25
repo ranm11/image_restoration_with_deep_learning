@@ -109,8 +109,7 @@ if(mode == Mode.CONVNET_OVER_SOBEL):
         result_y =  sobel_convnet_model_Y.predict(test_sobel_y)
         result = np.concatenate((result_x,result_y),axis=1)
         np.mean(np.abs(result-test_label))
-        dl_Instance.plotLoss(sobel_convnet_model_X.history)
-        dl_Instance.plotLoss(sobel_convnet_model_Y.history)
+        
     else:    
         sobel_convnet_model_X = dl_Instance.build_convnet_over_sobel_model(blurGenInstance)
         sobel_convnet_model_Y = dl_Instance.build_convnet_over_sobel_model(blurGenInstance)
@@ -147,8 +146,7 @@ if(mode==Mode.CONVNET):
         result =  conv_model.predict(test_data)
         dl_Instance.plotLoss(conv_model.history)
         plot_model(conv_model, to_file='convNet_model_plot.png', show_shapes=True, show_layer_names=True)
-        np.mean(result-test_label) # 12% deviation 
-
+        np.mean(np.abs(result-test_label))
     else:
         #fit blur image model
         conv_model = dl_Instance.build_convnet_model(blurGenInstance)
@@ -167,34 +165,20 @@ if(mode==Mode.CONVNET):
         plt.plot(validation_accuracy )
 if(mode==Mode.SOBEL):
         train_cov , train_label ,test_cov, test_label = getCovarianceMatrixDataset(img_stack,acc)        
-        # Compute eigenvalues and eigenvectors of the covariance matrix
-        # eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)
-# 
-        #Sort eigenvalues and corresponding eigenvectors
-        # sorted_indices = np.argsort(eigenvalues)[::-1]
-        # eigenvalues_sorted = eigenvalues[sorted_indices]
-        # eigenvectors_sorted = eigenvectors[:, sorted_indices]
-# 
-        #Extract dominant direction (eigenvector corresponding to largest eigenvalue)
-        # dominant_direction = eigenvectors_sorted[:, 0]
+        
         if skip_training:
-            covariance_model = load_model('Restore_blure_images_covariance.keras')
+            covariance_model = load_model('Restore_blure_images_covariance_sobel_2.keras')
             result =  covariance_model.predict(test_cov)
             plot_model(covariance_model, to_file='Sobel_model_plot.png', show_shapes=True, show_layer_names=True)
-            np.mean(result-test_label)/2 # 3% precision 
+            np.mean(np.abs(result-test_label))
         else:
             model = dl_Instance.build_covariance_analyzer_model(blurGenInstance)
             history = model.fit(train_cov, train_label, epochs=85, validation_split=0.2, verbose=1)
             result =  model.predict(test_cov)
             dl_Instance.plotLoss(history)
-            model.save('Restore_blure_images_covariance.keras')
             model.save('Restore_blure_images_covariance_sobel_2.keras')
-        np.mean(result-test_label)/2 # 3% deviation 
-        training_accuracy = history.history['accuracy']
-        plt.figure(figsize=(10, 5))
-        plt.plot(training_accuracy )
-        validation_accuracy = history.history['val_accuracy']
-        plt.plot(validation_accuracy )
+            np.mean(np.abs(result-test_label))
+            
         # Print dominant direction and corresponding eigenvalue
         # plt.figure(figsize=(10, 5))
         # plt.subplot(1, 3, 1)

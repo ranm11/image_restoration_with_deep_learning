@@ -6,7 +6,7 @@ if not exist %VENV% (
     call pip install venv
     call python -m venv %VENV%
     call %VENV%\Scripts\activate.bat
-    call pip install tensorflow  matplotlib sounddevice scipy pandas
+    call pip install tensorflow  matplotlib sounddevice scipy pandas  opencv-python
 ) ELSE (
     call %VENV%\Scripts\activate.bat
 )

@@ -27,7 +27,7 @@ class deepLearningModels:
         plt.show()
 
     def build_convnet_covariance_concatenated_model(self,blurGenerator):
-        FC_inputs = Input(shape=(4),name="SVD_inputs")
+        FC_inputs = Input(shape={4},name="SVD_inputs")
         layer1 = Dense(units = 80,activation = 'relu')(FC_inputs) 
         layer1 = Dropout(0.1)(layer1)
         layer1 = Dense(units=50, activation='relu')(layer1)
@@ -56,7 +56,7 @@ class deepLearningModels:
         return model
 
     def build_covariance_analyzer_model(self,blurGenInstance):
-        FC_inputs = Input(shape=(4),name="SVD_inputs")
+        FC_inputs = Input(shape={4},name="SVD_inputs")
         layer1 = Dense(units = 80,activation = 'relu')(FC_inputs) 
         layer1 = Dropout(0.1)(layer1)
         layer1 = Dense(units=50, activation='relu')(layer1)
@@ -106,7 +106,7 @@ class deepLearningModels:
 
     def buildConcatenatedNetwork(self,blurGenInstance):
             #build fullyConnected for Singular values
-            FC_inputs = Input(shape=(blurGenInstance.IMAGE_WiDTH),name="SVD_inputs")
+            FC_inputs = Input(shape={blurGenInstance.IMAGE_WiDTH},name="SVD_inputs")
             layer1 = Dense(units = 800,activation = 'relu')(FC_inputs) 
             layer1 = Dropout(0.1)(layer1)
             layer1 = Dense(units=500, activation='relu')(layer1)
@@ -135,18 +135,7 @@ class deepLearningModels:
             model.compile(optimizer='adam',  loss='mean_squared_error', metrics=['mae'])
             return model
 
-    # def plotLoss(self,history):
-    #     plt.figure()
-    #     #plt.subplot(111)
-    #     loss = history.history['loss']
-    #     epochs = range(1, len(loss) + 1)
-    #     plt.plot(epochs, loss, 'bo', label='Training loss')
-    #     plt.title('Training and validation loss')
-    #     plt.xlabel('Epochs')
-    #     plt.ylabel('Loss')
-    #     plt.legend()
-    #     plt.show()
-
+    
 
 
 
