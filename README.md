@@ -16,3 +16,13 @@ We simply employ the above reconstruction formula on the blur image and it works
 But what if we don’t know (Ax,Ay) acceleration components ? this is the place where Deep Learning take over !
 This workshop try to predict the (Ax,Ay) parameters and employ the reconstruction formula within the predicted values in several approaches.
 
+Final Results can be seen below :
+
+Restoring accelaration parameters with Deep Learning and restore images accordingly 
+
+Enjoy !
+
+![image](https://github.com/user-attachments/assets/c67547b5-e052-4849-a0f1-a326a552a7ed)
+
+
+
