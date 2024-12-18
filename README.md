@@ -25,4 +25,9 @@ Enjoy !
 ![image](https://github.com/user-attachments/assets/c67547b5-e052-4849-a0f1-a326a552a7ed)
 
 
+you may install python env and execute code with the CelebA dataset:
+
+https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html
+
+
 
